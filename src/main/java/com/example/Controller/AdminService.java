@@ -13,42 +13,65 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.Interface.UserInterface;
-import com.example.Model.User;
-import com.example.repository.DAO;
+import com.example.Interface.AdminInterface;
+import com.example.Model.Admin;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
 public class AdminService {
 
     @Autowired
-    DAO dao;
-    
-    @Autowired
-    UserInterface userInterface;
+    AdminInterface adminInterface;
 
-    // Sign Up
-    @PostMapping("/users")
-    public ResponseEntity<Map<String, String>> register(@RequestBody User user) {
+    // Login endpoint
+    @PostMapping("/admin/login")
+    public ResponseEntity<Map<String, String>> login(@RequestBody Admin admin, HttpSession session) {
         Map<String, String> response = new HashMap<>();
 
-        // Check if email already exists
-        if (userInterface.findByEmail(user.getEmail()) != null) {
-            response.put("message", "Email already exists");
-            return new ResponseEntity<>(response, HttpStatus.CONFLICT); // 409 Conflict
+        // Check if the username exists
+        Admin existingAdmin = adminInterface.findByUsername(admin.getUsername());
+        if (existingAdmin == null) {
+            response.put("message", "Username not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
-        // Insert the user
-        dao.insert(user);
-        response.put("message", "User registered successfully");
-        return new ResponseEntity<>(response, HttpStatus.CREATED); // 201 Created
-    }
-    
-    @GetMapping("/users/check-email")
-    public ResponseEntity<Map<String, Boolean>> checkEmail(@RequestParam String email) {
-        boolean exists = userInterface.findByEmail(email) != null;
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("exists", exists);
+        // Check if the password matches
+        if (!existingAdmin.getPassword().equals(admin.getPassword())) {
+            response.put("message", "Invalid password");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+
+        // Set session attribute
+        session.setAttribute("loggedInAdmin", existingAdmin.getUsername());
+        response.put("message", "Login successful");
+        response.put("authToken", "someGeneratedTokenForSession"); // Dummy token for simplicity
         return ResponseEntity.ok(response);
     }
+
+    // Endpoint to fetch admin data using username from session
+    @GetMapping("/admin")
+    public ResponseEntity<Map<String, String>> getAdminDetails(@RequestParam String username, HttpSession session) {
+        Map<String, String> response = new HashMap<>();
+
+        // Check session
+        String loggedInAdmin = (String) session.getAttribute("loggedInAdmin");
+        if (loggedInAdmin == null || !loggedInAdmin.equals(username)) {
+            response.put("message", "Unauthorized access");
+            return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+        }
+
+        // Fetch admin details
+        Admin admin = adminInterface.findByUsername(username);
+        if (admin == null) {
+            response.put("message", "Admin not found");
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+
+        response.put("username", admin.getUsername());
+//      response.put("name", admin.getName()); 
+        return ResponseEntity.ok(response);
+    }
+
 }

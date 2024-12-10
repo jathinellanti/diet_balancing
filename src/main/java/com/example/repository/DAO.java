@@ -16,8 +16,17 @@ public class DAO {
 	UserInterface repo;
 	
 	//Insert
-	public void insert (User u1)
-	{
-		repo.save(u1);
-	}
+//	public void insert (User u1)
+//	{
+//		repo.save(u1);
+//	}
+	
+    public void insert(User user) {
+        try {
+            repo.save(user);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save user: " + e.getMessage(), e);
+        }
+    }
+
 }
