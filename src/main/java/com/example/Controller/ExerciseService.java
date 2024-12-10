@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
+@CrossOrigin(origins ="*")
 @RequestMapping("/exercise")
 public class ExerciseService {
 

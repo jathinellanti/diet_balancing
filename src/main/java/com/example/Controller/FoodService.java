@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
+@CrossOrigin(origins ="*")
 @RequestMapping("/food")
 public class FoodService {
 
